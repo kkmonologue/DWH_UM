@@ -54,4 +54,4 @@ To maintain consistency and readability across the SQL Server environment, we st
   - **Facts**: Prefix with `fact_` (e.g., `fact_sales`).
 
 ## Documentation
-The initial plan diagram can be found in the `/docs` folder.
+The initial plan diagram ![Data Warehouse Layers](./datasets/layer_dwh.jpg)
