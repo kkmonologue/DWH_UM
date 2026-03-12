@@ -29,6 +29,12 @@ def process_and_load_data():
         df['cst_firstname'] = df['cst_firstname'].str.strip()
         df['cst_lastname'] = df['cst_lastname'].str.strip()
 
+        #replace name
+        df['cst_marital_status'] = df['cst_marital_status'].str.replace('M','Married')
+        df['cst_marital_status'] = df['cst_marital_status'].str.replace('S','Single')
+        df['cst_gndr'] = df['cst_gndr'].str.replace('M','Male')
+        df['cst_gndr'] = df['cst_gndr'].str.replace('F','Female')
+        
         # C. check：AW000 + cst_id == cst_key
         # make sure cst_id is int to str，to avoid 1.0 float
         mask = ('AW000' + df['cst_id'].astype(int).astype(str)) == df['cst_key']
@@ -36,8 +42,8 @@ def process_and_load_data():
 
         print(f"🧹 delete {len(df) - len(df_cleaned)} lines")
 
-        # --- 3. Transformation
-        conn.autocommit = False # close auto submit，开启事务控制
+        # 3. Transformation
+        conn.autocommit = False # close auto submit
         cursor = conn.cursor()
 
         # A. create Schema 和 table structure
