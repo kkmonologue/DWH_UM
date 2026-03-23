@@ -1,10 +1,7 @@
-#location file: erp_loc_a101
-#remove the minus of the cid column 
-#cntry: empty to null
-
 import pyodbc
 import pandas as pd
 import numpy as np
+
 
 DRIVER_PATH = '/opt/homebrew/lib/psqlodbcw.so'
 DB_NAME = 'dwh'
@@ -18,37 +15,29 @@ dwh_conn_str = f"DRIVER={{{DRIVER_PATH}}};SERVER=localhost;DATABASE={DB_NAME};UI
 def process_and_load_data():
     conn = None
     try:
-        conn = None
-
-        # 1. build connection and read date from ingestion
         conn = pyodbc.connect(dwh_conn_str)
         print(f"successfully connect dwh: {DB_NAME}")
 
         query = f"SELECT * FROM {SCHEMA_SOURCE}.erp_loc_a101"
         df = pd.read_sql(query, conn)
-        print(f"from{SCHEMA_SOURCE} load {len(df)} lines")
+        print(f"from {SCHEMA_SOURCE} load {len(df)} lines")
 
-
-
-        #  2. data cleaning
         
-        df_cleaned = df.where(pd.notnull(df), None)
+        df.columns = df.columns.str.strip().str.upper()
 
-        df['cid'] = df['cid'].astype(str).str.replace('-', '', regex=False)
+        df['CID'] = df['CID'].astype(str).str.replace('-', '', regex=False)
 
+        df['CNTRY'] = df['CNTRY'].astype(str).str.strip() 
+        df['CNTRY'] = df['CNTRY'].replace(['', 'nan', 'None', 'nan '], None)
 
-        df['cntry'] = df['cntry'].astype(str).str.strip() 
-        df['cntry'] = df['cntry'].replace(['', 'nan', 'None', 'nan '], None)
+        print(df.head()) 
+        
+        df_cleaned = df.replace({np.nan: None})
 
-        print(df)
-        df_cleaned = df.copy()
-        df_cleaned = df_cleaned.replace({np.nan: None})
-
-    # 3. Transformation
-        conn.autocommit = False # close auto submit
+        # Transformation ---
+        conn.autocommit = False 
         cursor = conn.cursor()
 
-                # A. create Schema 和 table structure
         cursor.execute(f"CREATE SCHEMA IF NOT EXISTS {SCHEMA_TARGET};")
         cursor.execute(f"DROP TABLE IF EXISTS {SCHEMA_TARGET}.erp_loc_a101;")
         cursor.execute(f"""
@@ -58,29 +47,18 @@ def process_and_load_data():
                 );
             """)
 
-            # B. insert
-        insert_sql = f"""
-            INSERT INTO {SCHEMA_TARGET}.erp_loc_a101
-            (   
-               CID , 
-                CNTRY
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ? ,?)
-        """
 
-        
+        insert_sql = f"INSERT INTO {SCHEMA_TARGET}.erp_loc_a101 (CID, CNTRY) VALUES (?, ?)"
+
         records = [
-            tuple(x) for x in df_cleaned[[
-                'CID' , 
-                'CNTRY'
-            ]].to_numpy() 
+            tuple(x) for x in df_cleaned[['CID', 'CNTRY']].to_numpy() 
         ]
 
         if records:
             cursor.fast_executemany = True 
             cursor.executemany(insert_sql, records)
 
-        conn.commit() # submit
+        conn.commit() 
         print(f"save successfully {SCHEMA_TARGET}.erp_loc_a101， {len(records)} records")
 
     except Exception as e:
