@@ -19,7 +19,7 @@ def create_structure():
         sys_cursor = sys_conn.cursor()
         try:
             sys_cursor.execute(f"CREATE DATABASE {DB_NAME}")
-            print(f"✅ Created database: {DB_NAME}")
+            print(f"Created database: {DB_NAME}")
         except pyodbc.Error as e:
             if '42P04' not in str(e): raise e
         sys_cursor.close(); sys_conn.close()
@@ -71,11 +71,11 @@ def create_structure():
         cursor.execute(f"DROP TABLE IF EXISTS {SCHEMA_NAME}.erp_px_cat_g1v2 CASCADE;")
         cursor.execute(f"CREATE TABLE {SCHEMA_NAME}.erp_px_cat_g1v2 (ID VARCHAR(50), CAT VARCHAR(50), SUBCAT VARCHAR(50), MAINTENANCE VARCHAR(50));")
 
-        print("🚀 Tables created successfully.")
+        print("Tables created successfully.")
         conn.close()
 
     except Exception as e:
-        print(f"❌ DDL Error: {e}")
+        print(f"DDL Error: {e}")
 
 if __name__ == "__main__":
     create_structure()
